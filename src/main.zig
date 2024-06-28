@@ -7,10 +7,16 @@ pub fn hexdump(reader: anytype) !void {
 
     var byte = reader.readByte();
     var bytes_on_line: u8 = 0;
+    var total_bytes_printed: u64 = 0x0000000;
 
     while (byte != error.EndOfStream) : (byte = reader.readByte()) {
+        if (bytes_on_line == 0) {
+            try writer.print("{X:0>7} ", .{total_bytes_printed});
+        }
+
         try writer.print("{X:0>2} ", .{try byte});
         bytes_on_line += 1;
+        total_bytes_printed += 1;
 
         if (bytes_on_line == 16) {
             try writer.print("\n", .{});
@@ -18,6 +24,7 @@ pub fn hexdump(reader: anytype) !void {
         }
     }
 
+    try writer.print("\n", .{});
     try buffer.flush();
 }
 
@@ -53,6 +60,7 @@ pub fn main() u8 {
         return 1;
     };
 
+    // TODO: Make it possible to read from stdinn
     const file = std.fs.cwd().openFile(args.path, .{ .mode = .read_only }) catch |err| {
         std.log.err("{!}: Opening file at path {s} failed", .{ err, args.path });
         return 1;
