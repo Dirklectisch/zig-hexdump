@@ -1,5 +1,23 @@
 const std = @import("std");
 
+const Options = struct {
+    path: ?[]const u8,
+};
+
+var options: Options = undefined;
+
+pub fn parseArgs() void {
+    options = Options{
+        .path = null,
+    };
+
+    for (std.os.argv, 0..) |arg, idx| {
+        if (idx == 1) {
+            options.path = std.mem.span(arg);
+        }
+    }
+}
+
 pub fn hexdump(reader: anytype) !void {
     var stdout = std.io.getStdOut();
     var buffer = std.io.bufferedWriter(stdout.writer());
@@ -28,50 +46,31 @@ pub fn hexdump(reader: anytype) !void {
     try buffer.flush();
 }
 
-const Arguments = struct {
-    path: []const u8,
-};
-
-const ArgumentError = error{
-    MissingPath,
-};
-
-pub fn parseArgs() ArgumentError!Arguments {
-    var parsedArguments: Arguments = undefined;
-    const length: usize = std.os.argv.len;
-    if (length < 2) {
-        return ArgumentError.MissingPath;
-    }
-
-    for (std.os.argv, 0..) |arg, idx| {
-        if (idx == 1) {
-            parsedArguments = Arguments{
-                .path = std.mem.span(arg),
-            };
-        }
-    }
-
-    return parsedArguments;
-}
-
 pub fn main() u8 {
-    const args: Arguments = parseArgs() catch |err| {
-        std.log.err("{!}: Invalid command line arguments", .{err});
-        return 1;
-    };
+    parseArgs();
 
-    // TODO: Make it possible to read from stdinn
-    const file = std.fs.cwd().openFile(args.path, .{ .mode = .read_only }) catch |err| {
-        std.log.err("{!}: Opening file at path {s} failed", .{ err, args.path });
-        return 1;
-    };
-    defer file.close();
+    if (options.path != null) {
+        const path: []const u8 = options.path orelse "";
 
-    var buffer = std.io.bufferedReader(file.reader());
-    hexdump(buffer.reader()) catch |err| {
-        std.log.err("{!}: Printing output failed", .{err});
-        return 1;
-    };
+        const file = std.fs.cwd().openFile(path, .{ .mode = .read_only }) catch |err| {
+            std.log.err("{!}: Opening file at path {s} failed", .{ err, path });
+            return 1;
+        };
+        defer file.close();
+
+        var buffer = std.io.bufferedReader(file.reader());
+
+        hexdump(buffer.reader()) catch |err| {
+            std.log.err("{!}: Printing output failed", .{err});
+            return 1;
+        };
+    } else {
+        var stdin = std.io.getStdIn();
+        hexdump(stdin.reader()) catch |err| {
+            std.log.err("{!}: Printing output failed", .{err});
+            return 1;
+        };
+    }
 
     return 0;
 }
