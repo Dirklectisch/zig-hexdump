@@ -8,7 +8,6 @@ const Options = struct {
 var options: Options = undefined;
 
 pub fn parseArgs() void {
-    // TODO: Make options compatible with reading from stdin
     options = Options{
         .path = null,
         .printASCII = false,
@@ -17,10 +16,10 @@ pub fn parseArgs() void {
     for (std.os.argv, 0..) |arg, idx| {
         const argAsSlice = std.mem.span(arg);
 
-        if (idx == 1) {
-            options.path = argAsSlice;
-        } else if (std.mem.eql(u8, argAsSlice, "-C")) {
+        if (std.mem.eql(u8, argAsSlice, "-C")) {
             options.printASCII = true;
+        } else if (idx == 1) {
+            options.path = argAsSlice;
         }
     }
 }
@@ -46,6 +45,7 @@ pub fn hexdump(reader: anytype) !void {
         total_bytes_on_line += 1;
         total_bytes_printed += 1;
 
+        // TODO: Fix showing ASCII on shorter lines
         if (total_bytes_on_line == 16) {
             if(options.printASCII == true) {
                 // TODO: escape newlines
