@@ -45,7 +45,6 @@ pub fn hexdump(reader: anytype) !void {
         total_bytes_on_line += 1;
         total_bytes_printed += 1;
 
-        // TODO: Fix showing ASCII on shorter lines
         if (total_bytes_on_line == 16) {
             if(options.printASCII == true) {
                 // TODO: escape newlines
@@ -55,6 +54,11 @@ pub fn hexdump(reader: anytype) !void {
             try writer.print("\n", .{});
             total_bytes_on_line = 0;
         }
+    }
+
+    // Print final segment of ASCII characters when needed
+    if(options.printASCII == true and total_bytes_on_line < 16) {
+        try writer.print("|{s}|", .{bytes_on_line[0..total_bytes_on_line-1]});
     }
 
     try writer.print("\n", .{});
