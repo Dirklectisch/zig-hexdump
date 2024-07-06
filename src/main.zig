@@ -30,22 +30,17 @@ pub fn hexdump(reader: anytype) !void {
     var writer = buffer.writer();
 
     var byte = reader.readByte();
+
+    const max_line_length = 16;
     var total_bytes_on_line: u8 = 0;
-    var bytes_on_line: [16]u8 = undefined;
     var total_bytes_printed: u64 = 0x0000000;
+    var bytes_on_line: [max_line_length]u8 = undefined;
 
-    while (byte != error.EndOfStream) : (byte = reader.readByte()) {
-        if (total_bytes_on_line == 0) {
-            try writer.print("{X:0>7} ", .{total_bytes_printed});
-        }
+    while (true) : (byte = reader.readByte()) {
 
-        const current_byte: u8 = try byte;
-        try writer.print("{X:0>2} ", .{current_byte});
-        bytes_on_line[total_bytes_on_line] = current_byte;
-        total_bytes_on_line += 1;
-        total_bytes_printed += 1;
-
-        if (total_bytes_on_line == 16) {
+        const endOfLine = total_bytes_on_line == max_line_length;
+        const endOfStream = byte == error.EndOfStream;
+        if(endOfStream or endOfLine) {
             if(options.printASCII == true) {
                 // TODO: escape newlines
                 try writer.print("|{s}|", .{bytes_on_line});
@@ -54,11 +49,21 @@ pub fn hexdump(reader: anytype) !void {
             try writer.print("\n", .{});
             total_bytes_on_line = 0;
         }
-    }
 
-    // Print final segment of ASCII characters when needed
-    if(options.printASCII == true and total_bytes_on_line < 16) {
-        try writer.print("|{s}|", .{bytes_on_line[0..total_bytes_on_line-1]});
+        if(endOfStream) {
+            break;
+        }
+
+        const startOfLine = total_bytes_on_line == 0;
+        if (startOfLine) {
+            try writer.print("{X:0>7} ", .{total_bytes_printed});
+        }
+
+        const current_byte: u8 = try byte;
+        try writer.print("{X:0>2} ", .{current_byte});
+        bytes_on_line[total_bytes_on_line] = current_byte;
+        total_bytes_on_line += 1;
+        total_bytes_printed += 1;
     }
 
     try writer.print("\n", .{});
