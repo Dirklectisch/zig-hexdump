@@ -3,7 +3,7 @@ const std = @import("std");
 const Options = struct {
     path: ?[]const u8,
     printASCII: bool,
-};
+    };
 
 var options: Options = undefined;
 
@@ -42,8 +42,9 @@ pub fn hexdump(reader: anytype) !void {
         const endOfStream = byte == error.EndOfStream;
         if(endOfStream or endOfLine) {
             if(options.printASCII == true) {
-                // TODO: escape newlines
-                try writer.print("|{s}|", .{bytes_on_line});
+                var replacement_buffer: [max_line_length]u8 = undefined;
+                _ = std.mem.replace(u8, &bytes_on_line, "\n", ".", &replacement_buffer);
+                try writer.print("|{s}|", .{replacement_buffer});
             }
 
             try writer.print("\n", .{});
