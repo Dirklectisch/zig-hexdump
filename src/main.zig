@@ -40,11 +40,18 @@ pub fn hexdump(reader: anytype) !void {
 
         const endOfLine = total_bytes_on_line == max_line_length;
         const endOfStream = byte == error.EndOfStream;
+        if(endOfStream) {
+            const padding_length = (max_line_length - total_bytes_on_line) * 3;
+            for (0..padding_length) |_| {
+                try writer.print(" ", .{});
+            }
+        }
+
         if(endOfStream or endOfLine) {
             if(options.printASCII == true) {
                 var replacement_buffer: [max_line_length]u8 = undefined;
                 _ = std.mem.replace(u8, &bytes_on_line, "\n", ".", &replacement_buffer);
-                try writer.print("|{s}|", .{replacement_buffer});
+                try writer.print("|{s}|", .{replacement_buffer[0..total_bytes_on_line]});
             }
 
             try writer.print("\n", .{});
