@@ -3,7 +3,7 @@ const std = @import("std");
 const Options = struct {
     path: ?[]const u8,
     printASCII: bool,
-    };
+};
 
 var options: Options = undefined;
 
@@ -37,7 +37,6 @@ pub fn hexdump(reader: anytype) !void {
     var endOfStream = false;
 
     while (true) {
-
         for (0..max_line_length) |i| {
             const byte: u8 = reader.readByte() catch {
                 endOfStream = true;
@@ -51,7 +50,7 @@ pub fn hexdump(reader: anytype) !void {
         const startOfFile = total_bytes_printed > 0;
         if (startOfFile) {
             const sameAsLastLine = std.mem.eql(u8, bytes_on_line[0..], bytes_on_last_line[0..]);
-            if(sameAsLastLine) {
+            if (sameAsLastLine) {
                 try writer.print("*\n", .{});
                 total_bytes_printed += total_bytes_on_line;
                 total_bytes_on_line = 0;
@@ -65,15 +64,14 @@ pub fn hexdump(reader: anytype) !void {
             try writer.print("{X:0>2} ", .{bytes_on_line[i]});
         }
 
-        if(endOfStream) {
+        if (endOfStream) {
             const padding_length = (max_line_length - total_bytes_on_line) * 3;
             for (0..padding_length) |_| {
                 try writer.print(" ", .{});
             }
         }
 
-
-        if(options.printASCII == true) {
+        if (options.printASCII == true) {
             var replacement_buffer: [max_line_length]u8 = undefined;
             _ = std.mem.replace(u8, &bytes_on_line, "\n", ".", &replacement_buffer);
             try writer.print("|{s}|", .{replacement_buffer[0..total_bytes_on_line]});
@@ -81,7 +79,7 @@ pub fn hexdump(reader: anytype) !void {
 
         try writer.print("\n", .{});
 
-        if(endOfStream) {
+        if (endOfStream) {
             break;
         }
 
